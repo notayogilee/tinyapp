@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/notayogilee/tinyapp/issues"
   },
-  "homepage": "https://github.com/notayogilee/tinyapp#readme"
+  "homepage": "https://github.com/notayogilee/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }
