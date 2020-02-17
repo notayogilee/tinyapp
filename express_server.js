@@ -8,7 +8,16 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 
 function generateRandomString() {
+  let randomString = '';
+  const alphanumericChoices = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
+  let min = Math.ceil(0);
+  let max = Math.floor(62);
+
+  for (let i = 0; i < 6; i++) {
+    randomString += alphanumericChoices[Math.floor(Math.random() * (max - min)) + min];
+  }
+  return randomString;
 }
 
 const urlDatabase = {
