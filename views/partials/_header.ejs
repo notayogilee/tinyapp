@@ -31,18 +31,13 @@
       />
       <button type="submit" class="btn btn-outline-dark">Login</button>
     </form>
-    <% } %> <% else { %>
-    <form method="POST" action="/login">
-      <input
-        value="Logged in as <%= username%>"
-        class="form-center"
-        type="text"
-        name="username"
-        placeholder="Username"
-        style="width: 300px; margin: 1em"
-      />
-      <button type="submit" class="btn btn-outline-dark">Login</button>
+    <% } else { %>
+
+    <h5>Logged in as <%= username%></h5>
+    <form method="POST" action="/logout">
+      <button type="submit" class="btn btn-outline-dark">Logout</button>
     </form>
+
     <% } %>
   </nav>
 </header>
