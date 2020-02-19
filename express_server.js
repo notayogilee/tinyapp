@@ -1,8 +1,10 @@
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
 const bodyParser = require('body-parser');
 
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
@@ -60,13 +62,23 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-  console.log(req.body);
-  console.log(req.params);
 
   urlDatabase[req.params.shortURL] = req.body.longURL;
 
   res.redirect('/urls');
 });
+
+
+app.get('/urls', (req, res) => {
+
+})
+
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  res.redirect('/urls');
+});
+
+
 
 app.get('/u/:shortURL', (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
