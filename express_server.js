@@ -1,7 +1,7 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const bodyParser = require('body-parser');
 
 app.use(cookieParser());
@@ -27,6 +27,16 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+//user database with example - to be removed later
+
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  }
+}
+
 app.get('/', (req, res) => {
   res.send('Hello!');
 });
@@ -34,6 +44,35 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+//registration
+
+app.get('/urls/register', (req, res) => {
+  // console.log(req.body);
+
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  res.render('urls_register', templateVars);
+})
+
+app.post('/urls/register', (req, res) => {
+
+  userId = generateRandomString();
+
+  let user = new Object;
+  user.id = userId;
+  user.email = req.body.email;
+  user.password = req.body.password;
+
+  users[userId] = user;
+  res.cookie('user', user);
+  res.redirect('/urls');
+});
+
+//Login
+
+app.get('/urls/login', (req, res) => {
+  let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
+  res.render('urls_login', templateVars);
+})
 
 app.get('/urls', (req, res) => {
   let templateVars = { urls: urlDatabase, username: req.cookies["username"] };
@@ -41,7 +80,7 @@ app.get('/urls', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-
+  // console.log(req.body.longURL);
   //fix this later
   if (req.body.longURL === '') {
     res.redirect('/urls/new');
@@ -68,11 +107,6 @@ app.post('/urls/:shortURL', (req, res) => {
 
   res.redirect('/urls');
 });
-
-
-app.get('/urls', (req, res) => {
-
-})
 
 app.post('/login', (req, res) => {
   res.cookie('username', req.body.username);
