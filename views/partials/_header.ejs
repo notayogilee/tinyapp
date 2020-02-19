@@ -33,7 +33,9 @@
     </form>
     <% } else { %>
 
-    <h5>Logged in as <%= username%></h5>
+    <h1 class="navbar-brand text-dark">
+      Logged in as: <%= username%>!
+    </h1>
     <form method="POST" action="/logout">
       <button type="submit" class="btn btn-outline-dark">Logout</button>
     </form>
