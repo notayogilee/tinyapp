@@ -19,17 +19,21 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
     </div>
-
-    <form method="POST" action="/register">
+    <% if(typeof user === 'undefined') { %>
+    <form method="GET" action="/register">
       <button type="submit" class="btn btn-outline-dark">Register</button>
     </form>
     <form method="GET" action="/login">
       <button type="submit" class="btn btn-outline-dark">Login</button>
     </form>
 
-    <h1 class="navbar-brand text-dark"></h1>
+    <% } else { %>
+
+    <h1 class="navbar-brand text-dark">Logged in as <%= user.email%></h1>
+
     <form method="POST" action="/logout">
       <button type="submit" class="btn btn-outline-dark">Logout</button>
     </form>
+    <% } %>
   </nav>
 </header>

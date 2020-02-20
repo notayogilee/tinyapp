@@ -9,17 +9,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
 
-// checks the users database for current users
-
-const userCheck = function (email) {
-  for (let user in users) {
-    if (email === user.email) {
-      return true;
-      console.log(user.email);
-    }
-  }
-  return false;
-}
 
 //generated random 6 character string
 function generateRandomString() {
@@ -42,12 +31,19 @@ const urlDatabase = {
 
 //user database with example - to be removed later
 
-const users = {
-  // "userRandomID": {
-  //   id: "userRandomID",
-  //   email: "user@example.com",
-  //   password: "purple-monkey-dinosaur"
-  // }
+const users = {};
+
+// checks the users database for current users
+
+const userCheck = function (users, email) {
+
+  for (let id in users) {
+    let user = users[id];
+    if (email === user.email) {
+      return true;
+    }
+  }
+  return false;
 }
 
 app.listen(PORT, () => {
@@ -57,52 +53,54 @@ app.listen(PORT, () => {
 //registration
 
 app.get('/register', (req, res) => {
-
-
-  res.render('urls_register');
+  let templateVars = { error: null }
+  res.render('urls_register', templateVars);
 })
 
 app.post('/register', (req, res) => {
 
   if (req.body.email === '' || req.body.password === '') {
     res.status(400);
-    let templateVars = { error: 'Please enter an email and password', urls: urlDatabase, user: req.cookies["user_id"] }
+    let templateVars = { error: 'Please enter an email and password' }
     res.render('urls_register', templateVars);
-  }
-  if (userCheck(req.body.email)) {
+  } else if (userCheck(users, req.body.email)) {
     res.status(400);
     let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.cookies["user_id"] }
     res.render('urls_register', templateVars);
+  } else {
+
+    userId = generateRandomString();
+
+    let user = new Object;
+    user.id = userId;
+    user.email = req.body.email;
+    user.password = req.body.password;
+
+    users[userId] = user;
+
+    res.cookie('user_id', user);
+    res.redirect('/urls');
   }
-
-  userId = generateRandomString();
-
-  let user = new Object;
-  user.id = userId;
-  user.email = req.body.email;
-  user.password = req.body.password;
-
-  users[userId] = user;
-  // console.log(users);
-  console.log(user);
-
-  res.cookie('user_id', user);
-  let templateVars = { user: req.cookies['user_id'] }
-  console.log(req.cookies['user_id']);
-  res.redirect('/urls', templateVars);
 });
 
 //Login
 
 app.get('/login', (req, res) => {
-
-  res.render('urls_login');
+  let templateVars = { error: null }
+  res.render('urls_login', templateVars);
 });
 
 app.post('/login', (req, res) => {
-  res.cookie('user_id', user);
-  let templateVars = { user: req.cookies["user_id"] };
-  res.redirect('/urls', templateVars);
+
+  if (!userCheck(users, req.body.email)) {
+    let templateVars = { error: 'You need to register an account' };
+    res.render('urls_register', templateVars);
+  } else if (userCheck(users, req.body.email) !== req.body.password) {
+    let templateVars = { error: 'The email address or password is incorrect' };
+  } else {
+    res.cookie('user_id', user);
+    res.redirect('/urls');
+  }
 });
 
 //Logout
