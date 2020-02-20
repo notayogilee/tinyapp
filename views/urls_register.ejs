@@ -21,7 +21,11 @@
     <%- include('./partials/_header')%>
     <main style="margin: 1em;">
       <h1>Create An Account</h1>
-      <form method="POST" action="/urls/register">
+      <form method="POST" action="/register">
+        <% if (error) { %>
+        <p><%= error %></p>
+        <% } %>
+
         <h3>Email Address</h3>
         <input
           class="form-center"
