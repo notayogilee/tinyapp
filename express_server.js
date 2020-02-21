@@ -25,8 +25,8 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  // "b2xVn2": "http://www.lighthouselabs.ca",
+  // "9sm5xK": "http://www.google.com"
 };
 
 //user database with example - to be removed later
@@ -116,9 +116,20 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/new', (req, res) => {
-  let templateVars = { user: req.cookies["user_id"] }
-  res.render('urls_new', templateVars);
+
+  if (typeof req.cookies['user_id'] === 'undefined') {
+    let templateVars = { error: 'Please register or login to make a new tinyURL' }
+    res.render('urls_login', templateVars);
+  } else {
+    let templateVars = { error: null, user: req.cookies["user_id"] }
+    res.render('urls_new', templateVars);
+  }
 });
+
+// app.post('/new', (req, res) => {
+// let templateVars = {}
+//   res.render('user_urls', templateVars);
+// })
 
 app.post('/urls', (req, res) => {
   // console.log(req.body.longURL);
@@ -126,13 +137,28 @@ app.post('/urls', (req, res) => {
   if (req.body.longURL === '') {
     res.redirect('/new');
   }
+
+  //modify urlDatabase here
   let shortURL;
   shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+
+  console.log(req.body.longURL);
+  console.log(shortURL);
+  console.log(req.cookies['user_id'].id);
+
+  urlDatabase[shortURL] = new Object;
+  urlDatabase[shortURL].longURL = req.body.longURL;
+  urlDatabase[shortURL].userId = req.cookies['user_id'].id;
+  console.log(urlDatabase);
+  res.redirect('/urls');
+  // res.render('urls_index', urlDatabase);
+
 });
 
+app.post('urls', (req, res) => {
 
+  res.render()
+})
 
 app.get('/urls/:shortURL', (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: req.cookies["user_id"] };
@@ -160,12 +186,14 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
   delete urlDatabase[req.params.shortURL];
   res.redirect('/urls');
-})
+});
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
+
+//homepage
 app.get('/', (req, res) => {
   res.send('Hello!');
 });

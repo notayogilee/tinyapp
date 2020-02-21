@@ -20,6 +20,9 @@
   <body>
     <%- include('./partials/_header')%>
     <main style="margin: 1em;">
+      <% if(error) { %>
+      <p><%= error%></p>
+      <% } %>
       <h1>Login</h1>
       <form method="POST" action="/login">
         <h3>Email Address</h3>
