@@ -9,7 +9,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.set('view engine', 'ejs');
 
-
 //generated random 6 character string
 function generateRandomString() {
   let randomString = '';
@@ -25,22 +24,22 @@ function generateRandomString() {
 }
 
 const urlDatabase = {
-  // "b2xVn2": "http://www.lighthouselabs.ca",
-  // "9sm5xK": "http://www.google.com"
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", id: "hrdcdd" },
+  "9sm5xK": { longURL: "http://www.google.com", id: "hrdcdd" }
 };
 
-//user database with example - to be removed later
+// //user database 
 
 const users = {};
 
-// checks the users database for current users
+// checks the users database for current users and returns user info if registered
 
 const userCheck = function (users, email) {
 
   for (let id in users) {
     let user = users[id];
     if (email === user.email) {
-      return true;
+      return user;
     }
   }
   return false;
@@ -77,7 +76,6 @@ app.post('/register', (req, res) => {
     user.password = req.body.password;
 
     users[userId] = user;
-
     res.cookie('user_id', user);
     res.redirect('/urls');
   }
@@ -95,11 +93,15 @@ app.post('/login', (req, res) => {
   if (!userCheck(users, req.body.email)) {
     let templateVars = { error: 'You need to register an account' };
     res.render('urls_register', templateVars);
-  } else if (userCheck(users, req.body.email) !== req.body.password) {
+
+  } else if (userCheck(users, req.body.email).password !== req.body.password) {
     let templateVars = { error: 'The email address or password is incorrect' };
+
+    res.render('urls_login', templateVars)
   } else {
-    res.cookie('user_id', user);
-    res.redirect('/urls');
+    let user = userCheck(users, req.body.email);
+    let templateVars = { error: null, urls: urlDatabase, user: user }
+    res.render('urls_index', templateVars);
   }
 });
 
@@ -122,29 +124,22 @@ app.get('/new', (req, res) => {
     res.render('urls_login', templateVars);
   } else {
     let templateVars = { error: null, user: req.cookies["user_id"] }
+
     res.render('urls_new', templateVars);
   }
 });
-
-// app.post('/new', (req, res) => {
-// let templateVars = {}
-//   res.render('user_urls', templateVars);
-// })
 
 app.post('/urls', (req, res) => {
   // console.log(req.body.longURL);
   //fix this later
   if (req.body.longURL === '') {
+
     res.redirect('/new');
   }
 
   //modify urlDatabase here
   let shortURL;
   shortURL = generateRandomString();
-
-  // console.log(req.body.longURL);
-  // console.log(shortURL);
-  // console.log(req.cookies['user_id'].id);
 
   urlDatabase[shortURL] = new Object;
   urlDatabase[shortURL].longURL = req.body.longURL;
@@ -154,11 +149,6 @@ app.post('/urls', (req, res) => {
 
 });
 
-// app.post('urls', (req, res) => {
-
-//   res.render()
-// })
-
 app.get('/urls/:shortURL', (req, res) => {
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies["user_id"] };
@@ -166,7 +156,6 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-
 
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
 
