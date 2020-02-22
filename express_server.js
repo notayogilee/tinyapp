@@ -32,6 +32,16 @@ const urlDatabase = {
 
 const users = {};
 
+const urlsForUserId = function (urlDatabase, id) {
+  let userURLS = [];
+  for (let shortURL of urlDatabase) {
+    if (urlDatabase[shortURL].id === id) {
+      userURLS.push(shortURL);
+    }
+  }
+  return userURLS;
+}
+
 // checks the users database for current users and returns user info if registered
 
 const userCheck = function (users, email) {
@@ -75,7 +85,8 @@ app.post('/register', (req, res) => {
     user.email = req.body.email;
     user.password = req.body.password;
 
-    users[userId] = user;
+    users[user.id] = user;
+    console.log(users);
     res.cookie('user_id', user);
     res.redirect('/urls');
   }
@@ -113,12 +124,18 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  let templateVars = { urls: urlDatabase, user: req.cookies["user_id"] };
-  res.render('urls_index', templateVars);
+
+  if (typeof req.cookies['user_id'] === 'undefined') {
+    let templateVars = { error: 'Please register or login to make a new tinyURL' }
+    res.render('urls_login', templateVars);
+  } else {
+
+    let templateVars = { urls: urlDatabase, user: req.cookies["user_id"] };
+    res.render('urls_index', templateVars);
+  }
 });
 
 app.get('/new', (req, res) => {
-
   if (typeof req.cookies['user_id'] === 'undefined') {
     let templateVars = { error: 'Please register or login to make a new tinyURL' }
     res.render('urls_login', templateVars);
@@ -129,25 +146,41 @@ app.get('/new', (req, res) => {
   }
 });
 
+
 app.post('/urls', (req, res) => {
   // console.log(req.body.longURL);
   //fix this later
   if (req.body.longURL === '') {
+    let templateVars = { error: 'Please enter a URL' }
+    res.render('urls_new', templateVars);
+    //need to fix this
+    // } else if (req.statusCode = 'null') {
+    //   let templateVars = { error: `Please enter a valid URL. ${req.body.longURL} does not exist.` }
+    //   res.render('urls_new', templateVars);
+  } else {
+    // console.log(req.statusCode);
+    //modify urlDatabase here
+    let shortURL;
+    shortURL = generateRandomString();
 
-    res.redirect('/new');
+    let templateVars = { error: null, urls: urlDatabase, user: req.cookies["user_id"] }
+
+    urlDatabase[shortURL] = new Object;
+    urlDatabase[shortURL].longURL = req.body.longURL;
+    urlDatabase[shortURL].userId = req.cookies['user_id'].id;
+    res.render('urls_index', templateVars);
   }
-
-  //modify urlDatabase here
-  let shortURL;
-  shortURL = generateRandomString();
-
-  urlDatabase[shortURL] = new Object;
-  urlDatabase[shortURL].longURL = req.body.longURL;
-  urlDatabase[shortURL].userId = req.cookies['user_id'].id;
-  console.log(urlDatabase);
-  res.redirect('/urls');
-
 });
+
+//Display MyURLS (only URLs that the users created)
+// app.get('/urls/:id', (req, res) => {
+
+//   let myURL = urlsForUserId(urlDatabase, req.cookies['user_id'].id);
+
+//   let templateVars = { user: req.cookies['user_id'], urls: myURL }
+
+//   res.render('urls_index', templateVars);
+// })
 
 app.get('/urls/:shortURL', (req, res) => {
 
@@ -175,9 +208,9 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-
+  let templateVars = { user: req.cookies['user_id'], urls: urlDatabase }
   delete urlDatabase[req.params.shortURL];
-  res.redirect('/urls');
+  res.render('urls_index', templateVars);
 });
 
 app.get('/urls.json', (req, res) => {

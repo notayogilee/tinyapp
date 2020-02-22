@@ -23,6 +23,11 @@
 
     <main style="margin: 1em;">
       <h3>Create TinyURL</h3>
+      <% if(error) { %>
+      <div class="alert alert-danger" role="alert">
+        <%= error%>
+      </div>
+      <% } %>
       <form class="form-inline" action="/urls" method="POST">
         <div class="form-group mb-2">
           <label for="longURL">Enter a URL:</label>
