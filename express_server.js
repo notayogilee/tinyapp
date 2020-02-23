@@ -35,10 +35,10 @@ const users = {};
 //Filters urlsDatabase for user created tinyURLs
 
 const urlsForUserId = function (urlDatabase, id) {
-  let userCreatedURLs = [];
+  let userCreatedURLs = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].id === id) {
-      userCreatedURLs.push(shortURL);
+      userCreatedURLs[shortURL] = urlDatabase[shortURL].longURL;
     }
   }
   return userCreatedURLs;
@@ -88,7 +88,6 @@ app.post('/register', (req, res) => {
     user.password = req.body.password;
 
     users[user.id] = user;
-    // console.log(users);
     res.cookie('user_id', user);
     res.redirect('/urls');
   }
@@ -114,9 +113,10 @@ app.post('/login', (req, res) => {
     res.render('urls_login', templateVars)
   } else {
 
-
     let user = userCheck(users, req.body.email);
-    let templateVars = { error: null, urls: urlDatabase, user: user }
+    let userURLs = urlsForUserId(urlDatabase, user.id);
+    res.cookie('user_id', user);
+    let templateVars = { error: null, urls: urlDatabase, user: user, userURLs: userURLs }
     res.render('urls_index', templateVars);
   }
 });
@@ -153,7 +153,7 @@ app.get('/new', (req, res) => {
 
 
 app.post('/urls', (req, res) => {
-  // console.log(req.body.longURL);
+
   //fix this later
   if (req.body.longURL === '') {
     let templateVars = { error: 'Please enter a URL' }
@@ -163,7 +163,7 @@ app.post('/urls', (req, res) => {
     //   let templateVars = { error: `Please enter a valid URL. ${req.body.longURL} does not exist.` }
     //   res.render('urls_new', templateVars);
   } else {
-    // console.log(req.statusCode);
+
     //modify urlDatabase here
     let shortURL;
     shortURL = generateRandomString();
@@ -172,7 +172,7 @@ app.post('/urls', (req, res) => {
 
     urlDatabase[shortURL] = new Object;
     urlDatabase[shortURL].longURL = req.body.longURL;
-    urlDatabase[shortURL].userId = req.cookies['user_id'].id;
+    urlDatabase[shortURL].id = req.cookies['user_id'].id;
 
     res.render('urls_index', templateVars);
   }
@@ -180,11 +180,9 @@ app.post('/urls', (req, res) => {
 
 
 app.get('/urls/:shortURL', (req, res) => {
-  console.log(req.cookies);
   if (typeof req.cookies['user_id'] === 'undefined') {
     let templateVars = { error: 'Please register or login' }
     res.render('urls_index', templateVars);
-    //verify if url belongs to logged in user
   } else {
     let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies["user_id"] };
     res.render('urls_show', templateVars);
@@ -222,6 +220,6 @@ app.get('/urls.json', (req, res) => {
 
 
 //homepage
-app.get('/', (req, res) => {
-  res.send('Hello!');
-});
+// app.get('/', (req, res) => {
+//   res.send('Hello!');
+// });
