@@ -32,14 +32,16 @@ const urlDatabase = {
 
 const users = {};
 
+//Filters urlsDatabase for user created tinyURLs
+
 const urlsForUserId = function (urlDatabase, id) {
-  let userURLS = [];
-  for (let shortURL of urlDatabase) {
+  let userCreatedURLs = [];
+  for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].id === id) {
-      userURLS.push(shortURL);
+      userCreatedURLs.push(shortURL);
     }
   }
-  return userURLS;
+  return userCreatedURLs;
 }
 
 // checks the users database for current users and returns user info if registered
@@ -86,7 +88,7 @@ app.post('/register', (req, res) => {
     user.password = req.body.password;
 
     users[user.id] = user;
-    console.log(users);
+    // console.log(users);
     res.cookie('user_id', user);
     res.redirect('/urls');
   }
@@ -95,6 +97,7 @@ app.post('/register', (req, res) => {
 //Login
 
 app.get('/login', (req, res) => {
+
   let templateVars = { error: null }
   res.render('urls_login', templateVars);
 });
@@ -110,6 +113,8 @@ app.post('/login', (req, res) => {
 
     res.render('urls_login', templateVars)
   } else {
+
+
     let user = userCheck(users, req.body.email);
     let templateVars = { error: null, urls: urlDatabase, user: user }
     res.render('urls_index', templateVars);
@@ -127,10 +132,10 @@ app.get('/urls', (req, res) => {
 
   if (typeof req.cookies['user_id'] === 'undefined') {
     let templateVars = { error: 'Please register or login to make a new tinyURL' }
-    res.render('urls_login', templateVars);
+    res.render('urls_index', templateVars);
   } else {
 
-    let templateVars = { urls: urlDatabase, user: req.cookies["user_id"] };
+    let templateVars = { error: null, urls: urlDatabase, user: req.cookies["user_id"] };
     res.render('urls_index', templateVars);
   }
 });
@@ -138,7 +143,7 @@ app.get('/urls', (req, res) => {
 app.get('/new', (req, res) => {
   if (typeof req.cookies['user_id'] === 'undefined') {
     let templateVars = { error: 'Please register or login to make a new tinyURL' }
-    res.render('urls_login', templateVars);
+    res.render('urls_index', templateVars);
   } else {
     let templateVars = { error: null, user: req.cookies["user_id"] }
 
@@ -168,24 +173,22 @@ app.post('/urls', (req, res) => {
     urlDatabase[shortURL] = new Object;
     urlDatabase[shortURL].longURL = req.body.longURL;
     urlDatabase[shortURL].userId = req.cookies['user_id'].id;
+
     res.render('urls_index', templateVars);
   }
 });
 
-//Display MyURLS (only URLs that the users created)
-// app.get('/urls/:id', (req, res) => {
-
-//   let myURL = urlsForUserId(urlDatabase, req.cookies['user_id'].id);
-
-//   let templateVars = { user: req.cookies['user_id'], urls: myURL }
-
-//   res.render('urls_index', templateVars);
-// })
 
 app.get('/urls/:shortURL', (req, res) => {
-
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies["user_id"] };
-  res.render('urls_show', templateVars);
+  console.log(req.cookies);
+  if (typeof req.cookies['user_id'] === 'undefined') {
+    let templateVars = { error: 'Please register or login' }
+    res.render('urls_index', templateVars);
+    //verify if url belongs to logged in user
+  } else {
+    let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies["user_id"] };
+    res.render('urls_show', templateVars);
+  }
 });
 
 app.post('/urls/:shortURL', (req, res) => {
@@ -198,7 +201,7 @@ app.post('/urls/:shortURL', (req, res) => {
 app.get('/u/:shortURL', (req, res) => {
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.render(longURL);
+  res.redirect(longURL);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
