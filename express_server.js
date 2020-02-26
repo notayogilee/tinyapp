@@ -1,13 +1,18 @@
 const express = require('express');
-const cookieParser = require('cookie-parser');
+// const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session');
 
-
-app.use(cookieParser());
+// app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieSession({
+  name: 'session',
+  keys: ['lamb', 'couch', 'good'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
 
 app.set('view engine', 'ejs');
 
@@ -66,7 +71,7 @@ app.listen(PORT, () => {
 //registration
 
 app.get('/register', (req, res) => {
-  if (req.cookies['user_id'] === 'undefined') {
+  if (req.session['user_id'] === 'undefined') {
     let templateVars = { error: 'Please register or login to access your URLs' }
     res.render('urls_login', templateVars);
   }
@@ -83,7 +88,7 @@ app.post('/register', (req, res) => {
     res.render('urls_register', templateVars);
   } else if (userCheck(users, req.body.email)) {
     res.status(400);
-    let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.cookies["user_id"] }
+    let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.session["user_id"] }
     res.render('urls_register', templateVars);
   } else {
 
@@ -92,15 +97,16 @@ app.post('/register', (req, res) => {
     let user = new Object;
     user.id = userId;
     user.email = req.body.email;
-    // user.password = req.body.password;
     const password = req.body.password;
     const hashedPassword = bcrypt.hashSync(password, 10);
     user.password = hashedPassword;
     users[user.id] = user;
 
-    res.cookie('user_id', user.id);
+    // res.cookie('user_id', user.id);
+    req.session['user_id'] = user.id;
+    // res.session['user_id'] = user.id;
 
-    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+    const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
     let templateVars = { error: null, urls: filteredList, user: user }
 
@@ -130,7 +136,9 @@ app.post('/login', (req, res) => {
     let user = userCheck(users, req.body.email);
 
     const filteredList = urlsForUserId(urlDatabase, user.id);
-    res.cookie('user_id', user.id);
+    // res.session['user_id'] = user.id;
+    // res.cookie('user_id', user.id);
+    req.session['user_id'] = user.id;
     let templateVars = { error: null, urls: filteredList, user: user }
     res.render('urls_index', templateVars);
   }
@@ -145,13 +153,12 @@ app.post('/logout', (req, res) => {
 
 app.get('/urls', (req, res) => {
 
-  if (typeof req.cookies['user_id'] === 'undefined') {
-    // let templateVars = { error: 'Please register or login to view the tinyURLs page' }
-    // res.render('urls_login', templateVars);
+  if (typeof req.session['user_id'] === 'undefined') {
+
     res.redirect('/main');
   } else {
-    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
-    let templateVars = { error: null, urls: filteredList, user: users[req.cookies["user_id"]] };
+    const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
+    let templateVars = { error: null, urls: filteredList, user: users[req.session["user_id"]] };
     res.render('urls_index', templateVars);
   }
 });
@@ -182,11 +189,11 @@ app.post('/urls', (req, res) => {
 
     urlDatabase[shortURL] = new Object;
     urlDatabase[shortURL].longURL = req.body.longURL;
-    urlDatabase[shortURL].id = req.cookies['user_id'];
+    urlDatabase[shortURL].id = req.session['user_id'];
 
-    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+    const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-    let templateVars = { error: null, urls: filteredList, user: users[req.cookies["user_id"]] }
+    let templateVars = { error: null, urls: filteredList, user: users[req.session["user_id"]] }
 
     res.render('urls_index', templateVars);
 
@@ -195,29 +202,29 @@ app.post('/urls', (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
 
-  if (typeof req.cookies['user_id'] === 'undefined') {
+  if (typeof req.session['user_id'] === 'undefined') {
     let templateVars = { error: 'Please login to modify your URL', urls: urlDatabase }
     res.render('urls_index', templateVars);
   } else {
 
-    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+    const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-    let currentUserId = userCheck(urlDatabase, users[req.cookies['user_id']].email);
+    let currentUserId = userCheck(urlDatabase, users[req.session['user_id']].email);
 
-    let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
+    let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session["user_id"]] };
     res.render('urls_show', templateVars);
   }
 });
 
 app.post('/urls/:shortURL', (req, res) => {
 
-  const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+  const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-  let currentUserId = userCheck(users, users[req.cookies['user_id']].email);
+  let currentUserId = userCheck(users, users[req.session['user_id']].email);
 
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
 
-  let templateVars = { error: null, user: users[req.cookies['user_id']], urls: filteredList }
+  let templateVars = { error: null, user: users[req.session['user_id']], urls: filteredList }
 
   res.render('urls_index', templateVars);
 });
@@ -231,9 +238,9 @@ app.get('/u/:shortURL', (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
 
-  const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+  const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-  let currentUserId = userCheck(urlDatabase, req.cookies['user_id'].email);
+  let currentUserId = userCheck(urlDatabase, req.session['user_id'].email);
 
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
@@ -243,18 +250,17 @@ app.get('/urls/:shortURL', (req, res) => {
 app.post('/urls/:shortURL/delete', (req, res) => {
 
 
-  if (req.cookies['user_id'] === 'undefined') {
+  if (req.session['user_id'] === 'undefined') {
     let templateVars = { error: 'You must be registered and logged in to edit or delete your own URL' }
     res.render('urls_index', templateVars);
-  } else if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].id) {
+  } else if (req.session['user_id'] !== urlDatabase[req.params.shortURL].id) {
     let templateVars = { error: 'You can only edit or delete your own URL' }
     res.render('urls_index', templateVars);
 
   } else {
 
     delete urlDatabase[req.params.shortURL];
-    // let templateVars = { error: null, user: users[req.cookies['user_id']], urls: urlDatabase }
-    // res.render('urls_index', templateVars);
+
     res.redirect('/main');
   }
 });
@@ -262,7 +268,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.get('/main', (req, res) => {
 
 
-  let templateVars = { error: null, urls: urlDatabase, user: users[req.cookies['user_id']] }
+  let templateVars = { error: null, urls: urlDatabase, user: users[req.session['user_id']] }
   res.render('urls_main', templateVars)
 });
 
