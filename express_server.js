@@ -170,14 +170,10 @@ app.get('/new', (req, res) => {
 
 app.post('/urls', (req, res) => {
 
-  //fix this later
   if (req.body.longURL === '') {
     let templateVars = { error: 'Please enter a URL' }
     res.render('urls_new', templateVars);
-    //need to fix this
-    // } else if (req.statusCode = 'null') {
-    //   let templateVars = { error: `Please enter a valid URL. ${req.body.longURL} does not exist.` }
-    //   res.render('urls_new', templateVars);
+
   } else {
 
     //modify urlDatabase here
@@ -191,9 +187,9 @@ app.post('/urls', (req, res) => {
     const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
 
     let templateVars = { error: null, urls: filteredList, user: users[req.cookies["user_id"]] }
-    // console.log(users[req.cookies['user_id']]);
+
     res.render('urls_index', templateVars);
-    // res.redirect('/urls');
+
   }
 });
 
@@ -208,7 +204,6 @@ app.get('/urls/:shortURL', (req, res) => {
 
     let currentUserId = userCheck(urlDatabase, users[req.cookies['user_id']].email);
 
-    console.log(users[req.cookies["user_id"]]);
     let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
     res.render('urls_show', templateVars);
   }
@@ -265,6 +260,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 });
 
 app.get('/main', (req, res) => {
+
 
   let templateVars = { error: null, urls: urlDatabase, user: users[req.cookies['user_id']] }
   res.render('urls_main', templateVars)
