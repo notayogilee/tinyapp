@@ -4,6 +4,7 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const bodyParser = require('body-parser');
 
+
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -38,7 +39,7 @@ const urlsForUserId = function (urlDatabase, id) {
   let userCreatedURLs = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].id === id) {
-      userCreatedURLs[shortURL] = urlDatabase[shortURL].longURL;
+      userCreatedURLs[shortURL] = urlDatabase[shortURL];
     }
   }
   return userCreatedURLs;
@@ -64,8 +65,13 @@ app.listen(PORT, () => {
 //registration
 
 app.get('/register', (req, res) => {
+  if (req.cookies['user_id'] === 'undefined') {
+    let templateVars = { error: 'Please register or login to access your URLs' }
+    res.render('urls_login', templateVars);
+  }
   let templateVars = { error: null }
   res.render('urls_register', templateVars);
+
 })
 
 app.post('/register', (req, res) => {
@@ -86,10 +92,16 @@ app.post('/register', (req, res) => {
     user.id = userId;
     user.email = req.body.email;
     user.password = req.body.password;
-
     users[user.id] = user;
-    res.cookie('user_id', user);
-    res.redirect('/urls');
+
+    res.cookie('user_id', user.id);
+
+    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+
+    let templateVars = { error: null, urls: filteredList, user: user }
+
+    res.render('urls_index', templateVars);
+    // res.redirect('/urls');
   }
 });
 
@@ -113,10 +125,13 @@ app.post('/login', (req, res) => {
     res.render('urls_login', templateVars)
   } else {
 
+    // bcrypt.compareSync('purple-monkey-dinosaur', hashedPassword);
+
     let user = userCheck(users, req.body.email);
-    let userURLs = urlsForUserId(urlDatabase, user.id);
-    res.cookie('user_id', user);
-    let templateVars = { error: null, urls: urlDatabase, user: user, userURLs: userURLs }
+
+    const filteredList = urlsForUserId(urlDatabase, user.id);
+    res.cookie('user_id', user.id);
+    let templateVars = { error: null, urls: filteredList, user: user }
     res.render('urls_index', templateVars);
   }
 });
@@ -131,26 +146,27 @@ app.post('/logout', (req, res) => {
 app.get('/urls', (req, res) => {
 
   if (typeof req.cookies['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please register or login to make a new tinyURL' }
-    res.render('urls_index', templateVars);
+    // let templateVars = { error: 'Please register or login to view the tinyURLs page' }
+    // res.render('urls_login', templateVars);
+    res.redirect('/main');
   } else {
-
-    let templateVars = { error: null, urls: urlDatabase, user: req.cookies["user_id"] };
+    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+    let templateVars = { error: null, urls: filteredList, user: users[req.cookies["user_id"]] };
     res.render('urls_index', templateVars);
   }
 });
 
 app.get('/new', (req, res) => {
   if (typeof req.cookies['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please register or login to make a new tinyURL' }
-    res.render('urls_index', templateVars);
+    let templateVars = { error: 'Please login to make a new tinyURL' }
+    res.render('urls_login', templateVars);
   } else {
-    let templateVars = { error: null, user: req.cookies["user_id"] }
+
+    let templateVars = { error: null, user: users[req.cookies["user_id"]] }
 
     res.render('urls_new', templateVars);
   }
 });
-
 
 app.post('/urls', (req, res) => {
 
@@ -168,58 +184,98 @@ app.post('/urls', (req, res) => {
     let shortURL;
     shortURL = generateRandomString();
 
-    let templateVars = { error: null, urls: urlDatabase, user: req.cookies["user_id"] }
-
     urlDatabase[shortURL] = new Object;
     urlDatabase[shortURL].longURL = req.body.longURL;
-    urlDatabase[shortURL].id = req.cookies['user_id'].id;
+    urlDatabase[shortURL].id = req.cookies['user_id'];
 
+    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+
+    let templateVars = { error: null, urls: filteredList, user: users[req.cookies["user_id"]] }
+    // console.log(users[req.cookies['user_id']]);
     res.render('urls_index', templateVars);
+    // res.redirect('/urls');
   }
 });
 
-
 app.get('/urls/:shortURL', (req, res) => {
+
   if (typeof req.cookies['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please register or login' }
+    let templateVars = { error: 'Please login to modify your URL', urls: urlDatabase }
     res.render('urls_index', templateVars);
   } else {
-    let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: req.cookies["user_id"] };
+
+    const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+
+    let currentUserId = userCheck(urlDatabase, users[req.cookies['user_id']].email);
+
+    console.log(users[req.cookies["user_id"]]);
+    let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
     res.render('urls_show', templateVars);
   }
 });
 
 app.post('/urls/:shortURL', (req, res) => {
 
+  const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+
+  let currentUserId = userCheck(users, users[req.cookies['user_id']].email);
+
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
 
-  res.redirect('/urls');
+  let templateVars = { error: null, user: users[req.cookies['user_id']], urls: filteredList }
+
+  res.render('urls_index', templateVars);
 });
 
 app.get('/u/:shortURL', (req, res) => {
 
   const longURL = urlDatabase[req.params.shortURL].longURL;
+
   res.redirect(longURL);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
+
+  const filteredList = urlsForUserId(urlDatabase, req.cookies['user_id']);
+
+  let currentUserId = userCheck(urlDatabase, req.cookies['user_id'].email);
+
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
   res.render('urls_show', templateVars);
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  let templateVars = { user: req.cookies['user_id'], urls: urlDatabase }
-  delete urlDatabase[req.params.shortURL];
-  res.render('urls_index', templateVars);
+
+
+  if (req.cookies['user_id'] === 'undefined') {
+    let templateVars = { error: 'You must be registered and logged in to edit or delete your own URL' }
+    res.render('urls_index', templateVars);
+  } else if (req.cookies['user_id'] !== urlDatabase[req.params.shortURL].id) {
+    let templateVars = { error: 'You can only edit or delete your own URL' }
+    res.render('urls_index', templateVars);
+
+  } else {
+
+    delete urlDatabase[req.params.shortURL];
+    // let templateVars = { error: null, user: users[req.cookies['user_id']], urls: urlDatabase }
+    // res.render('urls_index', templateVars);
+    res.redirect('/main');
+  }
 });
+
+app.get('/main', (req, res) => {
+
+  let templateVars = { error: null, urls: urlDatabase, user: users[req.cookies['user_id']] }
+  res.render('urls_main', templateVars)
+});
+
+app.post('/main', (req, res) => {
+
+  let templateVars = { error: null, urls: urlDatabase };
+  res.render('urls_main', templateVars);
+})
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
-
-
-//homepage
-// app.get('/', (req, res) => {
-//   res.send('Hello!');
-// });
