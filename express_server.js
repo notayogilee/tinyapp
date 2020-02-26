@@ -3,6 +3,7 @@ const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
 
 
 app.use(cookieParser());
@@ -91,7 +92,10 @@ app.post('/register', (req, res) => {
     let user = new Object;
     user.id = userId;
     user.email = req.body.email;
-    user.password = req.body.password;
+    // user.password = req.body.password;
+    const password = req.body.password;
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    user.password = hashedPassword;
     users[user.id] = user;
 
     res.cookie('user_id', user.id);
@@ -101,7 +105,6 @@ app.post('/register', (req, res) => {
     let templateVars = { error: null, urls: filteredList, user: user }
 
     res.render('urls_index', templateVars);
-    // res.redirect('/urls');
   }
 });
 
@@ -119,13 +122,10 @@ app.post('/login', (req, res) => {
     let templateVars = { error: 'You need to register an account' };
     res.render('urls_register', templateVars);
 
-  } else if (userCheck(users, req.body.email).password !== req.body.password) {
+  } else if (!bcrypt.compareSync(req.body.password, userCheck(users, req.body.email).password)) {
     let templateVars = { error: 'The email address or password is incorrect' };
-
     res.render('urls_login', templateVars)
   } else {
-
-    // bcrypt.compareSync('purple-monkey-dinosaur', hashedPassword);
 
     let user = userCheck(users, req.body.email);
 
