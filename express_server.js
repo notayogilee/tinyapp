@@ -16,7 +16,7 @@ app.use(cookieSession({
 app.set('view engine', 'ejs');
 
 //generated random 6 character string
-function generateRandomString() {
+let randomStringGenerator = function() {
   let randomString = '';
   const alphanumericChoices = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -27,20 +27,20 @@ function generateRandomString() {
     randomString += alphanumericChoices[Math.floor(Math.random() * (max - min)) + min];
   }
   return randomString;
-}
+};
 
 const urlDatabase = {
   "b2xVn2": { longURL: "http://www.lighthouselabs.ca", id: "hrdcdd" },
   "9sm5xK": { longURL: "http://www.google.com", id: "hrdcdd" }
 };
 
-// //user database 
+//user database
 
 const users = {};
 
 //Filters urlsDatabase for user created tinyURLs
 
-const urlsForUserId = function (urlDatabase, id) {
+const urlsForUserId = function(urlDatabase, id) {
   let userCreatedURLs = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].id === id) {
@@ -48,7 +48,7 @@ const urlsForUserId = function (urlDatabase, id) {
     }
   }
   return userCreatedURLs;
-}
+};
 
 
 app.listen(PORT, () => {
@@ -59,30 +59,28 @@ app.listen(PORT, () => {
 
 app.get('/register', (req, res) => {
   if (req.session['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please register or login to access your URLs' }
+    let templateVars = { error: 'Please register or login to access your URLs' };
     res.render('urls_login', templateVars);
   }
-  let templateVars = { error: null }
+  let templateVars = { error: null };
   res.render('urls_register', templateVars);
 
-})
+});
 
 app.post('/register', (req, res) => {
 
   if (req.body.email === '' || req.body.password === '') {
     res.status(400);
-    let templateVars = { error: 'Please enter an email and password' }
+    let templateVars = { error: 'Please enter an email and password' };
     res.render('urls_register', templateVars);
   } else if (userCheck(users, req.body.email)) {
     res.status(400);
-    let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.session["user_id"] }
+    let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.session["user_id"] };
     res.render('urls_register', templateVars);
   } else {
 
-    userId = generateRandomString();
-
     let user = new Object;
-    user.id = userId;
+    user.id = randomStringGenerator();
     user.email = req.body.email;
     const password = req.body.password;
     const hashedPassword = bcrypt.hashSync(password, 10);
@@ -93,7 +91,7 @@ app.post('/register', (req, res) => {
 
     const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-    let templateVars = { error: null, urls: filteredList, user: user }
+    let templateVars = { error: null, urls: filteredList, user: user };
 
     res.render('urls_index', templateVars);
   }
@@ -103,7 +101,7 @@ app.post('/register', (req, res) => {
 
 app.get('/login', (req, res) => {
 
-  let templateVars = { error: null }
+  let templateVars = { error: null };
   res.render('urls_login', templateVars);
 });
 
@@ -115,16 +113,15 @@ app.post('/login', (req, res) => {
 
   } else if (!bcrypt.compareSync(req.body.password, userCheck(users, req.body.email).password)) {
     let templateVars = { error: 'The email address or password is incorrect' };
-    res.render('urls_login', templateVars)
+    res.render('urls_login', templateVars);
   } else {
 
     let user = userCheck(users, req.body.email);
 
     const filteredList = urlsForUserId(urlDatabase, user.id);
-    // res.session['user_id'] = user.id;
-    // res.cookie('user_id', user.id);
+
     req.session['user_id'] = user.id;
-    let templateVars = { error: null, urls: filteredList, user: user }
+    let templateVars = { error: null, urls: filteredList, user: user };
     res.render('urls_index', templateVars);
   }
 });
@@ -150,11 +147,11 @@ app.get('/urls', (req, res) => {
 
 app.get('/new', (req, res) => {
   if (typeof req.session['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please login to make a new tinyURL' }
+    let templateVars = { error: 'Please login to make a new tinyURL' };
     res.render('urls_login', templateVars);
   } else {
 
-    let templateVars = { error: null, user: users[req.session["user_id"]] }
+    let templateVars = { error: null, user: users[req.session["user_id"]] };
 
     res.render('urls_new', templateVars);
   }
@@ -163,14 +160,14 @@ app.get('/new', (req, res) => {
 app.post('/urls', (req, res) => {
 
   if (req.body.longURL === '') {
-    let templateVars = { error: 'Please enter a URL' }
+    let templateVars = { error: 'Please enter a URL' };
     res.render('urls_new', templateVars);
 
   } else {
 
     //modify urlDatabase here
     let shortURL;
-    shortURL = generateRandomString();
+    shortURL = randomStringGenerator();
 
     urlDatabase[shortURL] = new Object;
     urlDatabase[shortURL].longURL = req.body.longURL;
@@ -178,23 +175,18 @@ app.post('/urls', (req, res) => {
 
     const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-    let templateVars = { error: null, urls: filteredList, user: users[req.session["user_id"]] }
+    let templateVars = { error: null, urls: filteredList, user: users[req.session["user_id"]] };
 
     res.render('urls_index', templateVars);
-
   }
 });
 
 app.get('/urls/:shortURL', (req, res) => {
 
   if (typeof req.session['user_id'] === 'undefined') {
-    let templateVars = { error: 'Please login to modify your URL', urls: urlDatabase }
+    let templateVars = { error: 'Please login to modify your URL', urls: urlDatabase };
     res.render('urls_index', templateVars);
   } else {
-
-    const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
-
-    let currentUserId = userCheck(urlDatabase, users[req.session['user_id']].email);
 
     let templateVars = { error: null, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session["user_id"]] };
     res.render('urls_show', templateVars);
@@ -205,11 +197,9 @@ app.post('/urls/:shortURL', (req, res) => {
 
   const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-  let currentUserId = userCheck(users, users[req.session['user_id']].email);
-
   urlDatabase[req.params.shortURL].longURL = req.body.longURL;
 
-  let templateVars = { error: null, user: users[req.session['user_id']], urls: filteredList }
+  let templateVars = { error: null, user: users[req.session['user_id']], urls: filteredList };
 
   res.render('urls_index', templateVars);
 });
@@ -223,9 +213,9 @@ app.get('/u/:shortURL', (req, res) => {
 
 app.get('/urls/:shortURL', (req, res) => {
 
-  const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
+  // const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
-  let currentUserId = userCheck(urlDatabase, req.session['user_id'].email);
+  // let currentUserId = userCheck(urlDatabase, req.session['user_id'].email);
 
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
@@ -236,10 +226,10 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
 
   if (req.session['user_id'] === 'undefined') {
-    let templateVars = { error: 'You must be registered and logged in to edit or delete your own URL' }
+    let templateVars = { error: 'You must be registered and logged in to edit or delete your own URL' };
     res.render('urls_index', templateVars);
   } else if (req.session['user_id'] !== urlDatabase[req.params.shortURL].id) {
-    let templateVars = { error: 'You can only edit or delete your own URL' }
+    let templateVars = { error: 'You can only edit or delete your own URL' };
     res.render('urls_index', templateVars);
 
   } else {
@@ -253,15 +243,15 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 app.get('/main', (req, res) => {
 
 
-  let templateVars = { error: null, urls: urlDatabase, user: users[req.session['user_id']] }
-  res.render('urls_main', templateVars)
+  let templateVars = { error: null, urls: urlDatabase, user: users[req.session['user_id']] };
+  res.render('urls_main', templateVars);
 });
 
 app.post('/main', (req, res) => {
 
   let templateVars = { error: null, urls: urlDatabase };
   res.render('urls_main', templateVars);
-})
+});
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);

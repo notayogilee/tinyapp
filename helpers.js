@@ -1,7 +1,7 @@
 
 // checks the users database for current users and returns user info if registered
 //this is what I used in my TinyApp
-function userCheck(users, email) {
+const userCheck = function(users, email) {
 
   for (let id in users) {
     let user = users[id];
@@ -9,10 +9,10 @@ function userCheck(users, email) {
       return user;
     }
   }
-}
+};
 
 //This is for the assertion exercise
-function getUserByEmail(email, users) {
+const getUserByEmail = function(email, users) {
 
   for (let id in users) {
     let user = users[id];
@@ -20,7 +20,7 @@ function getUserByEmail(email, users) {
       return user.id;
     }
   }
-  // return false;
-}
+};
+
 module.exports.userCheck = userCheck;
 module.exports.getUserByEmail = getUserByEmail;
