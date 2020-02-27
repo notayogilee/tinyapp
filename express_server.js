@@ -129,7 +129,8 @@ app.post('/login', (req, res) => {
 //Logout
 
 app.post('/logout', (req, res) => {
-  res.clearCookie("user_id");
+  // res.clearCookie("user_id");
+  req.session = null;
   res.redirect('/login');
 });
 
@@ -212,11 +213,6 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-
-  // const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
-
-  // let currentUserId = userCheck(urlDatabase, req.session['user_id'].email);
-
 
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
   res.render('urls_show', templateVars);
