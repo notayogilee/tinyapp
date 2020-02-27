@@ -1,12 +1,11 @@
 const express = require('express');
-// const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = process.env.PORT || 8080;
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const { userCheck } = require('./helpers');
 
-// app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
@@ -51,18 +50,6 @@ const urlsForUserId = function (urlDatabase, id) {
   return userCreatedURLs;
 }
 
-// checks the users database for current users and returns user info if registered
-
-const userCheck = function (users, email) {
-
-  for (let id in users) {
-    let user = users[id];
-    if (email === user.email) {
-      return user;
-    }
-  }
-  return false;
-}
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -102,9 +89,7 @@ app.post('/register', (req, res) => {
     user.password = hashedPassword;
     users[user.id] = user;
 
-    // res.cookie('user_id', user.id);
     req.session['user_id'] = user.id;
-    // res.session['user_id'] = user.id;
 
     const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
 
@@ -164,12 +149,12 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/new', (req, res) => {
-  if (typeof req.cookies['user_id'] === 'undefined') {
+  if (typeof req.session['user_id'] === 'undefined') {
     let templateVars = { error: 'Please login to make a new tinyURL' }
     res.render('urls_login', templateVars);
   } else {
 
-    let templateVars = { error: null, user: users[req.cookies["user_id"]] }
+    let templateVars = { error: null, user: users[req.session["user_id"]] }
 
     res.render('urls_new', templateVars);
   }
