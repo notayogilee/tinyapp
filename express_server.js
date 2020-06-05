@@ -50,7 +50,7 @@ const urlsForUserId = function (urlDatabase, id) {
 //registration
 
 app.get('/register', (req, res) => {
-  if (req.session['user_id'] === 'undefined') {
+  if (!req.session['user_id']) {
     let templateVars = { error: 'Please register or login to access your URLs' };
     res.render('urls_login', templateVars);
   }
@@ -127,9 +127,9 @@ app.post('/logout', (req, res) => {
 
 app.get('/urls', (req, res) => {
 
-  if (typeof req.session['user_id'] === 'undefined') {
-
-    res.redirect('/main');
+  if (!req.session['user_id']) {
+    let templateVars = { error: 'Please login to access your URLs' };
+    res.render('urls_login', templateVars);
   } else {
     const filteredList = urlsForUserId(urlDatabase, req.session['user_id']);
     let templateVars = { error: null, urls: filteredList, user: users[req.session["user_id"]] };
@@ -142,9 +142,7 @@ app.get('/new', (req, res) => {
     let templateVars = { error: 'Please login to make a new tinyURL' };
     res.render('urls_login', templateVars);
   } else {
-
     let templateVars = { error: null, user: users[req.session["user_id"]] };
-
     res.render('urls_new', templateVars);
   }
 });
