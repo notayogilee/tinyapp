@@ -16,7 +16,7 @@ app.use(cookieSession({
 app.set('view engine', 'ejs');
 
 //generated random 6 character string
-let randomStringGenerator = function() {
+let randomStringGenerator = function () {
   let randomString = '';
   const alphanumericChoices = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -29,10 +29,7 @@ let randomStringGenerator = function() {
   return randomString;
 };
 
-const urlDatabase = {
-  "b2xVn2": { longURL: "http://www.lighthouselabs.ca", id: "hrdcdd" },
-  "9sm5xK": { longURL: "http://www.google.com", id: "hrdcdd" }
-};
+const urlDatabase = {};
 
 //user database
 
@@ -40,7 +37,7 @@ const users = {};
 
 //Filters urlsDatabase for user created tinyURLs
 
-const urlsForUserId = function(urlDatabase, id) {
+const urlsForUserId = function (urlDatabase, id) {
   let userCreatedURLs = {};
   for (let shortURL in urlDatabase) {
     if (urlDatabase[shortURL].id === id) {
@@ -49,11 +46,6 @@ const urlsForUserId = function(urlDatabase, id) {
   }
   return userCreatedURLs;
 };
-
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
 
 //registration
 
@@ -69,7 +61,7 @@ app.get('/register', (req, res) => {
 
 app.post('/register', (req, res) => {
 
-  if (req.body.email === '' || req.body.password === '') {
+  if (!req.body.email || !req.body.password) {
     res.status(400);
     let templateVars = { error: 'Please enter an email and password' };
     res.render('urls_register', templateVars);
@@ -129,7 +121,6 @@ app.post('/login', (req, res) => {
 //Logout
 
 app.post('/logout', (req, res) => {
-  // res.clearCookie("user_id");
   req.session = null;
   res.redirect('/login');
 });
@@ -147,7 +138,7 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/new', (req, res) => {
-  if (typeof req.session['user_id'] === 'undefined') {
+  if (!req.session['user_id']) {
     let templateVars = { error: 'Please login to make a new tinyURL' };
     res.render('urls_login', templateVars);
   } else {
@@ -251,4 +242,9 @@ app.post('/main', (req, res) => {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
+});
+
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
