@@ -50,13 +50,8 @@ const urlsForUserId = function (urlDatabase, id) {
 //registration
 
 app.get('/register', (req, res) => {
-  if (!req.session['user_id']) {
-    let templateVars = { error: 'Please register or login to access your URLs' };
-    res.render('urls_login', templateVars);
-  }
   let templateVars = { error: null };
   res.render('urls_register', templateVars);
-
 });
 
 app.post('/register', (req, res) => {
@@ -68,10 +63,10 @@ app.post('/register', (req, res) => {
   } else if (userCheck(users, req.body.email)) {
     res.status(400);
     let templateVars = { error: 'That email already exists.  Try logging in.', urls: urlDatabase, user: req.session["user_id"] };
-    res.render('urls_register', templateVars);
+    res.render('urls_login', templateVars);
   } else {
 
-    let user = new Object;
+    let user = {};
     user.id = randomStringGenerator();
     user.email = req.body.email;
     const password = req.body.password;
@@ -221,18 +216,18 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 
     delete urlDatabase[req.params.shortURL];
 
-    res.redirect('/main');
+    res.redirect('/');
   }
 });
 
-app.get('/main', (req, res) => {
+app.get('/', (req, res) => {
 
 
   let templateVars = { error: null, urls: urlDatabase, user: users[req.session['user_id']] };
   res.render('urls_main', templateVars);
 });
 
-app.post('/main', (req, res) => {
+app.post('/', (req, res) => {
 
   let templateVars = { error: null, urls: urlDatabase };
   res.render('urls_main', templateVars);
